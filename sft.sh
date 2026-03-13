@@ -7,10 +7,11 @@ for category in "Industrial_and_Scientific"; do
     info_file=$(ls -f ./data/Amazon/info/${category}*.txt)
     echo ${train_file} ${eval_file} ${info_file} ${test_file}
     
-    torchrun --nproc_per_node 8 \
+    # Single A100-80G setup
+    torchrun --nproc_per_node 1 \
             sft.py \
             --base_model your_model_path \
-            --batch_size 1024 \
+            --batch_size 256 \
             --micro_batch_size 16 \
             --train_file ${train_file} \
             --eval_file ${eval_file} \
@@ -21,6 +22,6 @@ for category in "Industrial_and_Scientific"; do
             --train_from_scratch False \
             --seed 42 \
             --sid_index_path ./data/Amazon/index/Industrial_and_Scientific.index.json \
-            --item_meta_path ./data/Amazon/index//Industrial_and_Scientific.item.json \
+            --item_meta_path ./data/Amazon/index/Industrial_and_Scientific.item.json \
             --freeze_LLM False
 done
