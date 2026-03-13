@@ -1,4 +1,5 @@
 export NCCL_IB_DISABLE=1        # 完全禁用 IB/RoCE
+mkdir -p "${HOME}/.triton/autotune"
 # Office_Products, Industrial_and_Scientific
 for category in "Industrial_and_Scientific"; do
     train_file=$(ls -f ./data/Amazon/train/${category}*11.csv)
@@ -10,14 +11,14 @@ for category in "Industrial_and_Scientific"; do
     # Single A100-80G setup
     torchrun --nproc_per_node 1 \
             sft.py \
-            --base_model your_model_path \
+            --base_model ./models/Qwen2.5-Instruct-0.5b \
             --batch_size 256 \
             --micro_batch_size 16 \
             --train_file ${train_file} \
             --eval_file ${eval_file} \
-            --output_dir output_dir/xxx \
-            --wandb_project wandb_proj \
-            --wandb_run_name wandb_name \
+            --output_dir ./output_dir/sft_industrial_qwen25_05b \
+            --wandb_project minionerec-sft \
+            --wandb_run_name sft-industrial-qwen25-0.5b-seed42 \
             --category ${category} \
             --train_from_scratch False \
             --seed 42 \

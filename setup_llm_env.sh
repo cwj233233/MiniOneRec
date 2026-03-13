@@ -23,20 +23,34 @@ fi
 python -m pip install -r "${REQUIREMENTS_FILE}"
 
 echo "[3/3] Check model directory..."
-if [[ -d "${MODEL_DIR}" ]] && [[ -n "$(ls -A "${MODEL_DIR}" 2>/dev/null || true)" ]]; then
+if [[ -f "${MODEL_DIR}/config.json" ]] && ls "${MODEL_DIR}"/*.safetensors >/dev/null 2>&1; then
   echo "Model already exists at ${MODEL_DIR}, skip download."
 else
-  echo "Model not found. Downloading ${MODEL_ID} to ${MODEL_DIR} ..."
-  mkdir -p "${MODEL_DIR}"
+  echo "Model not found. Downloading ${MODEL_ID} from ModelScope to ${MODEL_DIR} ..."
   python - <<PY
-from huggingface_hub import snapshot_download
+import os
+import shutil
 
-snapshot_download(
-    repo_id="${MODEL_ID}",
-    local_dir="${MODEL_DIR}",
-    local_dir_use_symlinks=False,
-)
-print("Model download completed.")
+try:
+    from modelscope import snapshot_download
+except ImportError as exc:
+    raise SystemExit(
+        "ERROR: modelscope is not installed in current environment. "
+        "Please re-run step 2 or install requirements.txt first."
+    ) from exc
+
+model_id = "${MODEL_ID}"
+target_dir = "${MODEL_DIR}"
+cache_dir = os.path.dirname(target_dir)
+
+os.makedirs(cache_dir, exist_ok=True)
+downloaded_path = snapshot_download(model_id=model_id, cache_dir=cache_dir)
+
+if os.path.abspath(downloaded_path) != os.path.abspath(target_dir):
+    os.makedirs(target_dir, exist_ok=True)
+    shutil.copytree(downloaded_path, target_dir, dirs_exist_ok=True)
+
+print(f"Model download completed: {target_dir}")
 PY
 fi
 

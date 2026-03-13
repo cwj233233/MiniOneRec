@@ -1,3 +1,4 @@
+import ast
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -9,6 +10,14 @@ from tqdm import tqdm
 import os
 import copy
 import torch.nn.functional as F
+
+
+def _parse_history_item_sid(raw_value):
+    if isinstance(raw_value, list):
+        return raw_value
+    if isinstance(raw_value, str):
+        return ast.literal_eval(raw_value)
+    return list(raw_value)
 
 class Tokenizer:
     def __init__(self, tokenizer):
@@ -360,18 +369,18 @@ class SidDataset(CSVBaseDataset):
         self.get_inputs()  
 
     def get_history(self, row):
-        row['history_item_sid'] = eval(row['history_item_sid'])
-        L = len(row['history_item_sid']) 
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
+        L = len(history_item_sid)
         history = ""
-        history_str = "::".join(row["history_item_sid"])
+        history_str = "::".join(history_item_sid)
         for i in range(L):
             if i == 0:
-                history += row['history_item_sid'][i]
+                history += history_item_sid[i]
             else:
-                history += ", " + row['history_item_sid'][i]      
+                history += ", " + history_item_sid[i]
         target_item = str(row['item_sid'])
         target_item_sid = row["item_sid"]
-        last_history_item_sid = row['history_item_sid'][-1] if row['history_item_sid'] else None
+        last_history_item_sid = history_item_sid[-1] if history_item_sid else None
         return {"input": f"The user has interacted with items {history} in chronological order. Can you predict the next possible item that the user may expect?",
                 # Analyze user preferences and then predict the semantic ID of the next item.
                 "output": target_item + "\n",
@@ -401,18 +410,18 @@ class SidSFTDataset(CSVBaseDataset):
         self.get_inputs()
 
     def get_history(self, row):
-        row['history_item_sid'] = eval(row['history_item_sid'])
-        L = len(row['history_item_sid']) 
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
+        L = len(history_item_sid)
         history = ""
-        history_str = ", ".join(row["history_item_sid"])
+        history_str = ", ".join(history_item_sid)
         for i in range(L):
             if i == 0:
-                history += row['history_item_sid'][i]
+                history += history_item_sid[i]
             else:
-                history += ", " + row['history_item_sid'][i]      
+                history += ", " + history_item_sid[i]
         target_item = str(row['item_sid'])
         target_item_sid = row["item_sid"]
-        last_history_item_sid = row['history_item_sid'][-1] if row['history_item_sid'] else None
+        last_history_item_sid = history_item_sid[-1] if history_item_sid else None
         return {"input": f"The user has interacted with items {history} in chronological order. Can you predict the next possible item that the user may expect?",
                 "output": target_item + "\n",
                 "history_str": history_str,
@@ -492,18 +501,18 @@ class SidSFTDataset_GPR(CSVBaseDataset):
         self.get_inputs()  
 
     def get_history(self, row):
-        row['history_item_sid'] = eval(row['history_item_sid'])
-        L = len(row['history_item_sid']) 
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
+        L = len(history_item_sid)
         history = ""
-        history_str = ", ".join(row["history_item_sid"])
+        history_str = ", ".join(history_item_sid)
         for i in range(L):
             if i == 0:
-                history += row['history_item_sid'][i]
+                history += history_item_sid[i]
             else:
-                history += ", " + row['history_item_sid'][i]      
+                history += ", " + history_item_sid[i]
         target_item = str(row['item_sid'])
         target_item_sid = row["item_sid"]
-        last_history_item_sid = row['history_item_sid'][-1] if row['history_item_sid'] else None
+        last_history_item_sid = history_item_sid[-1] if history_item_sid else None
         return {"input": f"The user has interacted with items {history} in chronological order. Can you predict the next possible item that the user may expect?",
                 "output": target_item + "\n",
                 "history_str": history_str,
@@ -609,17 +618,17 @@ class EvalSidDataset(CSVBaseDataset):
 """
 
     def get_history(self, row):
-        row['history_item_sid'] = eval(row['history_item_sid'])
-        L = len(row['history_item_sid']) 
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
+        L = len(history_item_sid)
         history = ""
         for i in range(L):
             if i == 0:
-                history += row['history_item_sid'][i]
+                history += history_item_sid[i]
             else:
-                history += ", " + row['history_item_sid'][i]      
+                history += ", " + history_item_sid[i]
         target_item = str(row['item_sid'])
         target_item_sid = row["item_sid"]
-        last_history_item_sid = row['history_item_sid'][-1] if row['history_item_sid'] else None
+        last_history_item_sid = history_item_sid[-1] if history_item_sid else None
         return {"input": # f"The user has interacted with items {history} in chronological order. Can you predict the next possible item that the user may expect?",
                 f"Can you predict the next possible item the user may expect, given the following chronological interaction history: {history}",
                 "output": target_item + '\n',
@@ -1075,15 +1084,15 @@ class RLSidhis2TitleDataset(BaseDataset):
         self.get_inputs()
 
     def get_history(self, row):
-        row['history_item_sid'] = eval(row['history_item_sid'])
-        L = len(row['history_item_sid']) 
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
+        L = len(history_item_sid)
         history = ""
-        history_str = "::".join(row["history_item_sid"])
+        history_str = "::".join(history_item_sid)
         for i in range(L):
             if i == 0:
-                history += row['history_item_sid'][i]
+                history += history_item_sid[i]
             else:
-                history += ", " + row['history_item_sid'][i]      
+                history += ", " + history_item_sid[i]
         
         # Get target item title from item_id
         target_item_id = str(row['item_id'])
@@ -1233,7 +1242,7 @@ class FusionSeqRecDataset(BaseDataset):
         return f"Please review the user's historical interactions: {history}, and describe what kind of item he still needs."
     
     def get_history(self, row):
-        history_item_sid = eval(row['history_item_sid'])
+        history_item_sid = _parse_history_item_sid(row['history_item_sid'])
         history_str = ", ".join(history_item_sid)
         
         target_sid = row['item_sid']

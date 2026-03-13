@@ -134,7 +134,7 @@ def train(
     if not train_from_scratch:
         model = AutoModelForCausalLM.from_pretrained(
             base_model,
-            torch_dtype=torch.bfloat16,
+            dtype=torch.bfloat16,
         )
     else:
         config = AutoConfig.from_pretrained(base_model)
@@ -156,7 +156,7 @@ def train(
         if new_tokens:
             print(f"Adding {len(new_tokens)} new tokens to tokenizer")
             tokenizer.add_tokens(new_tokens)
-            model.resize_token_embeddings(len(tokenizer))
+            model.resize_token_embeddings(len(tokenizer), mean_resizing=False)
 
     # Freeze LLM parameters if required
     if freeze_LLM:
@@ -249,7 +249,7 @@ def train(
             load_best_model_at_end=True,
             ddp_find_unused_parameters=False if ddp else None,
             group_by_length=group_by_length,
-            report_to=None,
+            report_to="wandb",
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
