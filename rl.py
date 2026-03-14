@@ -15,8 +15,6 @@ import math
 import json
 from sklearn.metrics import ndcg_score
 
-os.environ['WANDB_MODE'] = 'disabled'
-
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -39,6 +37,7 @@ def train(
     # wandb params
     wandb_project: str = "",
     wandb_run_name: str = "",
+    wandb_mode: str = "offline",
     
     # training hyperparams
     output_dir: str = "",
@@ -133,7 +132,7 @@ def train(
     print("train_dataset: ", train_dataset)
     print("eval_dataset: ", eval_dataset)
 
-    llm_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map="auto")
+    llm_model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch.bfloat16, device_map="auto")
     device = llm_model.device
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     
@@ -257,8 +256,10 @@ def train(
     elif reward_type == "sasrec":
         reward_fun = cf_reward
     
-    os.environ['WANDB_PROJECT'] = wandb_project
-    os.environ["WANDB_MODE"] = "offline"
+    if wandb_project:
+        os.environ["WANDB_PROJECT"] = wandb_project
+    if wandb_mode:
+        os.environ["WANDB_MODE"] = wandb_mode.lower()
 
     training_args = GRPOConfig(output_dir=output_dir,
                                 save_steps=0.1,
